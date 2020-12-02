@@ -83,19 +83,19 @@ defmodule Aoc2020.Day02 do
   """
 
   defmodule Policy.V1 do
-    defstruct [:char, :times]
+    defstruct [:char, :low, :high]
 
-    def valid?(%__MODULE__{char: <<char::binary-size(1)>>, times: _low.._high = range}, subject) do
+    def valid?(%__MODULE__{char: <<char::binary-size(1)>>, low: low, high: high}, subject) do
       occurances = length(String.split(subject, char)) - 1
-      occurances in range
+      occurances in low..high
     end
   end
 
   defmodule Policy.V2 do
-    defstruct [:char, :times]
+    defstruct [:char, :low, :high]
 
-    def valid?(%__MODULE__{char: <<char::binary-size(1)>>, times: a..b}, subject) do
-      :erlang.xor(String.at(subject, a - 1) == char, String.at(subject, b - 1) == char)
+    def valid?(%__MODULE__{char: <<char::binary-size(1)>>, low: low, high: high}, subject) do
+      :erlang.xor(String.at(subject, low - 1) == char, String.at(subject, high - 1) == char)
     end
   end
 
@@ -113,13 +113,13 @@ defmodule Aoc2020.Day02 do
   defp parse(input, opts) do
     case String.split(input, " ") do
       [times, <<char::binary-size(1), ":">>, passwd] ->
-        [{lower, ""}, {upper, ""}] =
+        [{low, ""}, {high, ""}] =
           times
           |> String.split("-")
           |> Enum.map(&Integer.parse/1)
 
         policy_version = Keyword.get(opts, :policy_version, Policy.V2)
-        policy = struct(policy_version, char: char, times: lower..upper)
+        policy = struct(policy_version, char: char, high: high, low: low)
 
         {:ok, {policy, passwd}}
 
