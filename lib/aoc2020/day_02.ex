@@ -2,6 +2,8 @@ defmodule Aoc2020.Day02 do
   @moduledoc """
   Day 2: Password Philosophy
 
+  ## Part One
+
   Your flight departs in a few days from the coastal airport; the
   easiest way down to the coast from here is via toboggan.
 
@@ -29,11 +31,12 @@ defmodule Aoc2020.Day02 do
   1-3 a means that the password must contain a at least 1 time and at
   most 3 times.
 
-    iex> Aoc2020.Day02.valid?("1-3 a: abcde")
+    iex> opts = [policy_version: Aoc2020.Day02.Policy.V1]
+    iex> Aoc2020.Day02.valid?("1-3 a: abcde", opts)
     true
-    iex> Aoc2020.Day02.valid?("1-3 b: cdefg")
+    iex> Aoc2020.Day02.valid?("1-3 b: cdefg", opts)
     false
-    iex> Aoc2020.Day02.valid?("2-9 c: ccccccccc")
+    iex> Aoc2020.Day02.valid?("2-9 c: ccccccccc", opts)
     true
 
   In the above example, 2 passwords are valid. The middle password,
@@ -42,5 +45,86 @@ defmodule Aoc2020.Day02 do
   nine c, both within the limits of their respective policies.
 
   How many passwords are valid according to their policies?
+
+  ## Part Two
+
+  While it appears you validated the passwords correctly, they don't
+  seem to be what the Official Toboggan Corporate Authentication
+  System is expecting.
+
+  The shopkeeper suddenly realizes that he just accidentally explained
+  the password policy rules from his old job at the sled rental place
+  down the street! The Official Toboggan Corporate Policy actually
+  works a little differently.
+
+  Each policy actually describes two positions in the password, where
+  1 means the first character, 2 means the second character, and so
+  on. (Be careful; Toboggan Corporate Policies have no concept of
+  "index zero"!) Exactly one of these positions must contain the given
+  letter. Other occurrences of the letter are irrelevant for the
+  purposes of policy enforcement.
+
+  Given the same example list from above:
+
+  1-3 a: abcde is valid: position 1 contains a and position 3 does not.
+  1-3 b: cdefg is invalid: neither position 1 nor position 3 contains b.
+  2-9 c: ccccccccc is invalid: both position 2 and position 9 contain c.
+
+    iex> opts = [policy_version: Aoc2020.Day02.Policy.V2]
+    iex> Aoc2020.Day02.valid?("1-3 a: abcde", opts)
+    true
+    iex> Aoc2020.Day02.valid?("1-3 b: cdefg", opts)
+    false
+    iex> Aoc2020.Day02.valid?("2-9 c: ccccccccc", opts)
+    false
+
+  How many passwords are valid according to the new interpretation of
+  the policies?
   """
+
+  defmodule Policy.V1 do
+    defstruct [:char, :times]
+
+    def valid?(%__MODULE__{char: <<char::binary-size(1)>>, times: _low.._high = range}, subject) do
+      occurances = length(String.split(subject, char)) - 1
+      occurances in range
+    end
+  end
+
+  defmodule Policy.V2 do
+    defstruct [:char, :times]
+
+    def valid?(%__MODULE__{char: <<char::binary-size(1)>>, times: a..b}, subject) do
+      :erlang.xor(String.at(subject, a - 1) == char, String.at(subject, b - 1) == char)
+    end
+  end
+
+  def valid?(passwd_string, opts \\ []) when is_binary(passwd_string) do
+    case parse(passwd_string, opts) do
+      {:ok, {%_policy_version{} = policy, passwd}} ->
+        valid_according_to_policy?(passwd, policy)
+    end
+  end
+
+  def valid_according_to_policy?(<<passwd::binary>>, %policy_version{} = policy) do
+    policy_version.valid?(policy, passwd)
+  end
+
+  defp parse(input, opts) do
+    case String.split(input, " ") do
+      [times, <<char::binary-size(1), ":">>, passwd] ->
+        [{lower, ""}, {upper, ""}] =
+          times
+          |> String.split("-")
+          |> Enum.map(&Integer.parse/1)
+
+        policy_version = Keyword.get(opts, :policy_version, Policy.V2)
+        policy = struct(policy_version, char: char, times: lower..upper)
+
+        {:ok, {policy, passwd}}
+
+      _otherwise ->
+        {:error, {:invalid_input_format, input}}
+    end
+  end
 end
