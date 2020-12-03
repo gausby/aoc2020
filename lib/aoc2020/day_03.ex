@@ -77,7 +77,25 @@ defmodule Aoc2020.Day03 do
 
   ## Part Two
 
-  ...
+  Time to check the rest of the slopes - you need to minimize the
+  probability of a sudden arboreal stop, after all.
+
+  Determine the number of trees you would encounter if, for each of
+  the following slopes, you start at the top-left corner and traverse
+  the map all the way to the bottom:
+
+  Right 1, down 1.
+  Right 3, down 1. (This is the slope you already checked.)
+  Right 5, down 1.
+  Right 7, down 1.
+  Right 1, down 2.
+
+  In the above example, these slopes would find 2, 7, 3, 4, and 2
+  tree(s) respectively; multiplied together, these produce the answer
+  336.
+
+  What do you get if you multiply together the number of trees
+  encountered on each of the listed slopes?
   """
 
   defmodule Terrain do
@@ -115,6 +133,10 @@ defmodule Aoc2020.Day03 do
       %Terrain{t | cursors: Map.put_new(cursors, cursor, {{x, y}, []})}
     end
 
+    def add_cursor(%Terrain{} = t, cursors) when is_list(cursors) do
+      Enum.reduce(cursors, t, &add_cursor(&2, &1))
+    end
+
     @doc """
     Check if there is a tree at the coordinate, or cursor position
     """
@@ -146,6 +168,10 @@ defmodule Aoc2020.Day03 do
     def collect(%Terrain{cursors: cursors}, cursor) when is_atom(cursor) do
       {_position, observations} = Map.fetch!(cursors, cursor)
       Enum.reverse(observations)
+    end
+
+    def collect(%Terrain{} = t, cursors) when is_list(cursors) do
+      Enum.map(cursors, &collect(t, &1))
     end
 
     @doc """
@@ -230,7 +256,22 @@ defmodule Aoc2020.Day03 do
       |> Enum.into(%{}, fn {a, b} -> {b, a} end)
     end
 
-    defp decode_line(""), do: raise(ArgumentError, "Line cannot be empty")
+    def decode([<<_::binary>> | _] = list) do
+      list
+      |> Stream.map(&decode_line(&1))
+      |> Stream.with_index()
+      |> Enum.into(%{}, fn {a, b} -> {b, a} end)
+    end
+
+    def decode(<<data::binary>>) do
+      data
+      |> String.split("\n", trim: true)
+      |> Stream.map(&decode_line(&1))
+      |> Stream.with_index()
+      |> Enum.into(%{}, fn {a, b} -> {b, a} end)
+    end
+
+    defp decode_line(""), do: <<>>
 
     defp decode_line(line) do
       line = String.trim(line)

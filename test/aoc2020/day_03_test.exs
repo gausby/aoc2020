@@ -20,5 +20,34 @@ defmodule Aoc2020Test.Day03Test do
              |> Enum.count(&match?({_, true}, &1))
   end
 
-  test "Part Two"
+  describe "Part Two" do
+    test "example" do
+      map_input = """
+      ..##.......
+      #...#...#..
+      .#....#..#.
+      ..#.#...#.#
+      .#...##..#.
+      ..#.##.....
+      .#.#.#....#
+      .#........#
+      #.##...#...
+      #...##....#
+      .#..#...#.#
+      """
+
+      assert 336 ==
+               Terrain.new(map_input)
+               |> Terrain.add_cursor([:one, :two, :three, :four, :five])
+               |> Terrain.action(:one, {:repeat, [{:right, 1}, {:down, 1}, :observe]})
+               |> Terrain.action(:two, {:repeat, [{:right, 3}, {:down, 1}, :observe]})
+               |> Terrain.action(:three, {:repeat, [{:right, 5}, {:down, 1}, :observe]})
+               |> Terrain.action(:four, {:repeat, [{:right, 7}, {:down, 1}, :observe]})
+               |> Terrain.action(:five, {:repeat, [{:right, 1}, {:down, 2}, :observe]})
+               |> Terrain.collect([:one, :two, :three, :four, :five])
+               |> Enum.reduce(1, fn observations, acc ->
+                 Enum.count(observations, &match?({_pos, true}, &1)) * acc
+               end)
+    end
+  end
 end
