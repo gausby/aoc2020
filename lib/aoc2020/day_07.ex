@@ -117,4 +117,56 @@ defmodule Aoc2020.Day07 do
 
     defparsec(:parse, rule)
   end
+
+  defmodule RuleGraph do
+    def from_tokens(tokens) do
+      IO.inspect tokens
+      Enum.into(tokens, %{}, fn
+        {:ok, [bag: [modifier: mod, color: color], contain: bags], "", _, _, _} ->
+          {{mod, color}, bags}
+
+          # otherwise, raise
+      end)
+      |> build()
+    end
+
+    def build(rules) do
+      {edges, graph} =
+        Enum.map_reduce(rules, :digraph.new(), fn
+          {key, value}, graph ->
+            _ew_side_effects! = :digraph.add_vertex(graph, key)
+
+            edges =
+              for {quantity, {:bag, [modifier: mod, color: color]}} <- value do
+                {key, {mod, color}, quantity}
+              end
+
+            {edges, graph}
+        end)
+
+      _side_effects =
+        for {v1, v2, quantity} <- List.flatten(edges) do
+          :digraph.add_edge(graph, v1, v2, quantity)
+        end
+
+      {:ok, graph}
+    end
+
+    @doc """
+    List the bags a given bag fits in according to the rules
+    """
+    def fits_in(graph, haystack, acc \\ [])
+
+    def fits_in(_graph, [], acc), do: acc
+
+    def fits_in(graph, [_vertex | _] = in_neighbours, acc) do
+      to_visit = in_neighbours -- acc
+      Enum.reduce(to_visit, acc ++ to_visit, &fits_in(graph, &1, &2))
+    end
+
+    def fits_in(graph, {_, _} = vertex, acc) do
+      neighbours = :digraph.in_neighbours(graph, vertex)
+      fits_in(graph, neighbours, acc)
+    end
+  end
 end
