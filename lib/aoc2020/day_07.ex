@@ -77,7 +77,7 @@ defmodule Aoc2020.Day07 do
     def bag do
       unwrap_and_tag(modifier(), :modifier)
       |> ignore(whitespace())
-      |> concat(color() |> unwrap_and_tag(:color))
+      |> concat(unwrap_and_tag(color(), :color))
       |> ignore(whitespace())
       |> ignore(string("bag") |> optional(string("s")))
       |> tag(:bag)
