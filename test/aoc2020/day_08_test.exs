@@ -71,33 +71,22 @@ defmodule Aoc2020.Day08Test do
                Interpreter.new(tokens) |> Interpreter.step(4)
 
       # enough of that, let's just pretend that it works; flawlessly! 
-
-      # assert 5 ==
-      #          Enum.reduce_while(Interpreter.new(tokens), {0, MapSet.new()}, fn state,
-      #                                                                           {acc, seen} ->
-      #            if MapSet.member?(seen, state.pos) do
-      #              {:halt, acc}
-      #            else
-      #              {:cont, {state.acc, MapSet.put(seen, state.pos)}}
-      #            end
-      #          end)
     end
 
     test "example interpreter" do
-      assert 5 ==
-               """
-               nop +0
-               acc +1
-               jmp +4
-               acc +3
-               jmp -3
-               acc -99
-               acc +1
-               jmp -4
-               acc +6
-               """
-               |> Interpreter.load()
-               |> loop_detector()
+      source = """
+      nop +0
+      acc +1
+      jmp +4
+      acc +3
+      jmp -3
+      acc -99
+      acc +1
+      jmp -4
+      acc +6
+      """
+
+      assert 5 == Interpreter.load(source) |> loop_detector()
     end
 
     test "actual data", %{source: source} do
