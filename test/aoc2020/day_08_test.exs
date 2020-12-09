@@ -112,5 +112,52 @@ defmodule Aoc2020.Day08Test do
   end
 
   describe "part two" do
+    test "example data" do
+      example =
+        Interpreter.load("""
+        nop +0
+        acc +1
+        jmp +4
+        acc +3
+        jmp -3
+        acc -99
+        acc +1
+        jmp -4
+        acc +6
+        """)
+
+      assert 8 == loop_detector_(example)
+    end
+
+    test "actual data", %{source: source} do
+      boot_loader = Interpreter.load(source)
+      assert 1643 == loop_detector_(boot_loader)
+    end
+
+    defp loop_detector_(interpreter) do
+      loop_detector_fn = fn
+        %{pos: pos} = state, {_acc, order, seen} ->
+          if MapSet.member?(seen, pos) do
+            {:halt, {:error, order}}
+          else
+            {:cont, {state.acc, [pos | order], MapSet.put(seen, pos)}}
+          end
+      end
+
+      initial_state = {0, [0], MapSet.new()}
+
+      case Enum.reduce_while(interpreter, initial_state, loop_detector_fn) do
+        {val, _, %MapSet{}} ->
+          {:ok, val}
+
+        {:error, visits} ->
+          for {:ok, mutation} <- Enum.map(visits, &Interpreter.mutate(interpreter, &1)) do
+            Enum.reduce_while(mutation, initial_state, loop_detector_fn)
+          end
+          |> Enum.reject(&match?({:error, _}, &1))
+          |> List.first()
+          |> elem(0)
+      end
+    end
   end
 end
